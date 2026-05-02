@@ -1,9 +1,10 @@
 from typing import Dict, List, Any, Optional, Type
 from datetime import date
+from dataclasses import dataclass, field
+import uuid
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from dataclasses import dataclass
-import uuid
 
 from backtesting.engine import BacktestEngine
 from backtesting.result import BacktestResult
@@ -69,12 +70,8 @@ class BacktestResultResponse(BaseModel):
 
 @dataclass
 class BacktestRegistry:
-    results: Dict[str, BacktestResult] = None
-    data_api: DataAPI = None
-    
-    def __post_init__(self):
-        self.results = {}
-        self.data_api = DataAPI()
+    results: Dict[str, BacktestResult] = field(default_factory=dict)
+    data_api: DataAPI = field(default_factory=DataAPI)
     
     def run_backtest(
         self,

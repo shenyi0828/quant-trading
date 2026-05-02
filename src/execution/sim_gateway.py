@@ -5,21 +5,29 @@ from typing import List, Optional, Dict, Any
 
 from execution.gateway import ExecutionGateway
 from execution.models import Order, OrderRequest, Trade, Position, AccountInfo
-from execution.types import OrderStatus
+from execution.types import OrderStatus, Direction, Offset
 
 
 class SimGateway(ExecutionGateway):
     name: str = "sim_gateway"
 
-    def __init__(self):
+    def __init__(
+        self,
+        initial_capital: float = 1000000.0,
+        commission_rate: float = 0.001,
+        slippage_rate: float = 0.0,
+    ):
         self._orders: Dict[str, Order] = {}
         self._trades: List[Trade] = []
-        self._positions: List[Position] = []
+        self._positions: Dict[str, Position] = {}
+        self._initial_capital = initial_capital
+        self._commission_rate = commission_rate
+        self._slippage_rate = slippage_rate
         self._account: AccountInfo = AccountInfo(
             account_id="sim_account",
             gateway_name=self.name,
-            balance=1000000.0,
-            available=1000000.0,
+            balance=initial_capital,
+            available=initial_capital,
         )
         self._market_prices: Dict[str, float] = {}
         self._connected: bool = False
@@ -42,7 +50,7 @@ class SimGateway(ExecutionGateway):
         if not self._connected:
             self._connected = True
 
-        order_id = f"order_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
+        order_id = f"sim_{uuid.uuid4().hex[:12]}"
         now = datetime.now()
 
         order = Order(
@@ -94,7 +102,7 @@ class SimGateway(ExecutionGateway):
         return orders
 
     def query_positions(self) -> List[Position]:
-        return self._positions
+        return list(self._positions.values())
 
     def query_account(self) -> Optional[AccountInfo]:
         return self._account
@@ -121,7 +129,7 @@ class SimGateway(ExecutionGateway):
             offset=order.offset,
             price=price,
             quantity=quantity,
-            commission=price * quantity * 0.0001,
+            commission=price * quantity * self._commission_rate,
             timestamp=now,
             gateway_name=self.name,
         )
@@ -137,3 +145,46 @@ class SimGateway(ExecutionGateway):
 
         self._emit_order_status(order)
         self._emit_trade(trade)
+
+        self._update_position(trade)
+        self._update_account(trade)
+
+    def _update_position(self, trade: Trade):
+        key = f"{trade.symbol}.{trade.exchange.value}"
+
+        if trade.offset == Offset.OPEN:
+            if trade.direction == Direction.LONG:
+                if key in self._positions:
+                    pos = self._positions[key]
+                    total_cost = pos.avg_cost * pos.quantity + trade.price * trade.quantity
+                    pos.quantity += trade.quantity
+                    pos.avg_cost = total_cost / pos.quantity
+                else:
+                    self._positions[key] = Position(
+                        symbol=trade.symbol,
+                        exchange=trade.exchange,
+                        direction=Direction.LONG,
+                        quantity=trade.quantity,
+                        avg_cost=trade.price,
+                        current_price=self._market_prices.get(trade.symbol, trade.price),
+                        gateway_name=self.name,
+                    )
+        elif trade.offset == Offset.CLOSE:
+            if key in self._positions:
+                pos = self._positions[key]
+                pos.quantity -= trade.quantity
+                if pos.quantity <= 0:
+                    del self._positions[key]
+
+        for pos in self._positions.values():
+            if pos.symbol in self._market_prices:
+                pos.current_price = self._market_prices[pos.symbol]
+
+    def _update_account(self, trade: Trade):
+        trade_value = trade.price * trade.quantity
+        if trade.direction == Direction.LONG:
+            self._account.balance -= trade_value + trade.commission
+            self._account.available -= trade_value + trade.commission
+        elif trade.direction == Direction.SHORT:
+            self._account.balance += trade_value - trade.commission
+            self._account.available += trade_value - trade.commission
