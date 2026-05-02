@@ -27,7 +27,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/data_center"]
+packages = ["src/data_center", "src/execution"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
