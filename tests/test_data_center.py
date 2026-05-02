@@ -1,14 +1,9 @@
 """验证数据中心 MVP 功能"""
 from datetime import date, timedelta
 import sys
-import os
+from pathlib import Path
 
-os.environ.pop("http_proxy", None)
-os.environ.pop("https_proxy", None)
-os.environ.pop("HTTP_PROXY", None)
-os.environ.pop("HTTPS_PROXY", None)
-
-sys.path.insert(0, ".")
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from data_center import DataAPI
 

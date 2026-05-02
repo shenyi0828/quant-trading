@@ -1,34 +1,38 @@
 # Quant Trading
 
-A股量化交易系统
+A股量化交易系统 — 开源量化交易框架
 
 ## 项目结构
 
 ```
 quant-trading/
-├── data_center/     # 数据中心模块
-│   ├── interfaces/  # 数据源接口定义
-│   ├── models/      # 数据模型 (SQLAlchemy)
-│   ├── sources/     # 数据源实现 (AKShare)
-│   ├── storage/     # SQLite存储层
-│   └── api/         # 对外API
-├── data/            # 数据存储目录
-│   ├── market.db    # SQLite数据库
-│   └── cache/       # 缓存目录
-└ requirements.txt   # Python依赖
-└ test_data_center.py # 测试脚本
+├── src/
+│   └── data_center/     # 数据中心模块
+│       ├── interfaces/  # 数据源接口定义
+│       ├── models/      # SQLAlchemy数据模型
+│       ├── sources/     # 数据源实现 (AKShare)
+│       ├── storage/     # SQLite持久化层
+│       └── api/         # 统一对外API
+├── frontend/
+│   └── dashboard/       # 监控面板 (React+TS)
+├── tests/
+├── data/                # 运行时数据 (gitignore)
+├── pyproject.toml
+├── requirements.txt
+└── README.md
 ```
 
-## 数据中心 MVP
+## 安装
 
-### 功能
+```bash
+# 后端
+pip install -e ".[test]"
 
-- **股票列表**: 5201只A股 (2312上海 + 2889深圳)
-- **日K线数据**: OHLCV数据获取与存储
-- **交易日历**: 交易日判断 (2026年242个交易日)
-- **数据持久化**: SQLite本地存储
+# 前端
+cd frontend/dashboard && npm install
+```
 
-### 使用
+## 快速开始
 
 ```python
 from data_center import DataAPI
@@ -36,24 +40,33 @@ from data_center import DataAPI
 api = DataAPI()
 api.initialize()
 
+# 股票列表
 stocks = api.list_stocks()
+print(f"A股: {len(stocks)}只")
+
+# 日K线
+bars = api.get_daily_bar("000001", start, end)
+
+# 交易日判断
 api.is_trading_day(date.today())
-api.get_daily_bar("600000", start, end)
 ```
 
-### 安装依赖
+## Sprint 进度
 
-```bash
-pip install akshare sqlalchemy pandas
-```
+| Sprint | 模块 | 状态 |
+|--------|------|------|
+| 1 | 数据中心 MVP | ✅ 已完成 |
+| 1 | 监控面板 MVP | ✅ 已完成 |
+| 2 | 策略引擎 | 🔄 进行中 |
+| 2 | 回测引擎 | 🔄 进行中 |
 
-## Sprint 1 进度
+## 数据源
 
-| 模块 | 状态 | 分支 |
-|------|------|------|
-| 数据中心 MVP | ✅ 完成 | main |
-| 监控面板 MVP | 🚧 开发中 | feature/monitor-dashboard |
+当前接入: **AKShare** (免费A股数据)
+- 股票列表 (沪深全市场)
+- 日K线 OHLCV
+- 交易日历
 
-## 下一步
+## License
 
-Sprint 2: 策略引擎 + 回测引擎
+MIT
