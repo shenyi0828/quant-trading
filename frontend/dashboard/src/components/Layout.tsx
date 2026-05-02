@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, BarChart3, LayoutDashboard, Settings } from 'lucide-react';
+import { Activity, BarChart3, LayoutDashboard, Settings, TrendingUp, PieChart, Layers } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,9 +11,11 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/strategies', label: 'Strategies', icon: BarChart3 },
-    { path: '/analytics', label: 'Analytics', icon: Activity },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    { path: '/strategies', label: '策略管理', icon: BarChart3 },
+    { path: '/factors', label: '因子分析', icon: TrendingUp },
+    { path: '/backtest', label: '回测分析', icon: PieChart },
+    { path: '/pool', label: '股票池', icon: Layers },
+    { path: '/settings', label: '设置', icon: Settings },
   ];
 
   return (
