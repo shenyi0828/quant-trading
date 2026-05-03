@@ -10,6 +10,8 @@ from api.routes import (
     portfolio_router,
     backtest_router,
 )
+from api.routes.strategies import register_strategy_class
+from strategy_engine.examples.dual_thrust import DualThrust
 
 
 @asynccontextmanager
@@ -42,6 +44,8 @@ def create_app() -> FastAPI:
     app.include_router(portfolio_router, tags=["组合管理"])
     app.include_router(risk_router, tags=["风控管理"])
     app.include_router(backtest_router, tags=["回测服务"])
+
+    register_strategy_class("DualThrust", DualThrust)
 
     @app.get("/health", tags=["系统"])
     async def health_check():

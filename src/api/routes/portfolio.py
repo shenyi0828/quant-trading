@@ -2,7 +2,7 @@ from datetime import date
 from typing import Dict, List, Optional
 from enum import Enum
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 
 from portfolio import (
@@ -173,7 +173,7 @@ def _pnl_to_response(pnl) -> PnLSnapshotResponse:
     description="获取投资组合的整体摘要信息，包括总资产、盈亏、账户和持仓概览。",
 )
 async def get_portfolio_summary(
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> PortfolioSummaryResponse:
     summary = manager.get_summary()
     return PortfolioSummaryResponse(
@@ -197,7 +197,7 @@ async def get_portfolio_summary(
 )
 async def list_accounts(
     status: Optional[AccountStatusEnum] = Query(default=None, description="按状态过滤"),
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> List[AccountResponse]:
     accounts = list(manager.accounts.values())
     if status:
@@ -214,7 +214,7 @@ async def list_accounts(
 )
 async def create_account(
     request: AccountCreateRequest,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> AccountResponse:
     account = manager.create_account(
         strategy_name=request.strategy_name,
@@ -235,7 +235,7 @@ async def create_account(
 )
 async def get_account(
     account_id: str,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> AccountResponse:
     account = manager.get_account(account_id)
     if not account:
@@ -259,7 +259,7 @@ async def get_account(
 async def update_account_status(
     account_id: str,
     request: AccountStatusUpdateRequest,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> AccountResponse:
     account = manager.get_account(account_id)
     if not account:
@@ -301,7 +301,7 @@ async def update_account_status(
 )
 async def delete_account(
     account_id: str,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> Dict[str, str]:
     account = manager.get_account(account_id)
     if not account:
@@ -331,7 +331,7 @@ async def delete_account(
 )
 async def get_account_positions(
     account_id: str,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> List[PositionResponse]:
     account = manager.get_account(account_id)
     if not account:
@@ -349,7 +349,7 @@ async def get_account_positions(
     description="获取所有活跃账户的聚合持仓信息。",
 )
 async def get_aggregated_positions(
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> List[PositionResponse]:
     positions = manager.get_aggregated_positions()
     return [_position_to_response(p) for p in positions.values()]
@@ -363,7 +363,7 @@ async def get_aggregated_positions(
 )
 async def get_pnl_snapshot(
     current_date: Optional[str] = Query(default=None, description="日期 (YYYY-MM-DD)"),
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> Dict[str, PnLSnapshotResponse]:
     target_date = None
     if current_date:
@@ -393,7 +393,7 @@ async def get_pnl_snapshot(
 )
 async def allocate_capital(
     request: AllocateRequest,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> List[AllocationResponse]:
     try:
         method = _convert_allocation_method(request.method)
@@ -425,7 +425,7 @@ async def allocate_capital(
 )
 async def rebalance(
     request: RebalanceRequest,
-    manager: PortfolioManager = Query(default_factory=get_portfolio_manager)
+    manager: PortfolioManager = Depends(get_portfolio_manager)
 ) -> List[AllocationResponse]:
     try:
         method = _convert_allocation_method(request.method)

@@ -156,10 +156,10 @@ def get_risk_checker() -> RiskChecker:
         return _risk_checker
     except NameError:
         _risk_checker = RiskChecker()
-        _risk_checker.add_rule(PositionLimitRule(max_position_ratio=0.3))
-        _risk_checker.add_rule(OrderLimitRule(max_order_value=500000))
-        _risk_checker.add_rule(DailyLossLimitRule(max_daily_loss_ratio=0.02))
-        _risk_checker.add_rule(ConcentrationRule(max_positions=10))
+        _risk_checker.add_rule(PositionLimitRule(max_ratio=0.3))
+        _risk_checker.add_rule(OrderLimitRule(max_amount=500000))
+        _risk_checker.add_rule(DailyLossLimitRule(max_loss_ratio=0.02))
+        _risk_checker.add_rule(ConcentrationRule(max_concentration=0.4, min_positions=3))
         return _risk_checker
 
 
