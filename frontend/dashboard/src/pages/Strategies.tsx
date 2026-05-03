@@ -62,7 +62,7 @@ function StrategyCard({ strategy, onToggle }: { strategy: Strategy; onToggle: (i
       <div className="border-t border-border pt-3">
         <p className="text-xs text-text-muted mb-2">最新信号</p>
         <div className="flex gap-2">
-          {signals.slice(0, 4).map((signal, i) => (
+          {signals.slice(0, 4).map((signal: StrategySignal, i: number) => (
             <SignalBadge key={i} signal={signal} />
           ))}
         </div>
@@ -101,7 +101,7 @@ function StrategyListView({ strategies, onToggle }: { strategies: Strategy[]; on
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {strategies.map((strategy) => {
+          {strategies.map((strategy: Strategy) => {
             const isPositive = strategy.totalPnL >= 0;
             return (
               <tr key={strategy.id} className="hover:bg-bg-hover transition-colors">
@@ -160,7 +160,7 @@ export function Strategies() {
   const [filter, setFilter] = useState<'all' | 'running' | 'stopped' | 'error'>('all');
 
   const handleToggle = (id: string) => {
-    setStrategies(prev => prev.map(s => {
+    setStrategies(prev => prev.map((s: Strategy) => {
       if (s.id === id) {
         return {
           ...s,
@@ -173,11 +173,11 @@ export function Strategies() {
 
   const filteredStrategies = filter === 'all' 
     ? strategies 
-    : strategies.filter(s => s.status === filter);
+    : strategies.filter((s: Strategy) => s.status === filter);
 
-  const runningCount = strategies.filter(s => s.status === 'running').length;
-  const totalPnL = strategies.reduce((sum, s) => sum + s.totalPnL, 0);
-  const avgWinRate = strategies.reduce((sum, s) => sum + s.winRate, 0) / strategies.length;
+  const runningCount = strategies.filter((s: Strategy) => s.status === 'running').length;
+  const totalPnL = strategies.reduce((sum: number, s: Strategy) => sum + s.totalPnL, 0);
+  const avgWinRate = strategies.reduce((sum: number, s: Strategy) => sum + s.winRate, 0) / strategies.length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -226,7 +226,7 @@ export function Strategies() {
         />
         <MetricCard
           title="最大回撤"
-          value={Math.max(...strategies.map(s => s.maxDrawdown))}
+          value={Math.max(...strategies.map((s: Strategy) => s.maxDrawdown))}
           suffix="%"
           icon={<Shield className="w-5 h-5 text-loss" />}
           color="loss"
@@ -251,7 +251,7 @@ export function Strategies() {
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredStrategies.map((strategy) => (
+          {filteredStrategies.map((strategy: Strategy) => (
             <StrategyCard 
               key={strategy.id} 
               strategy={strategy} 

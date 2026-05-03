@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Activity, TrendingUp, TrendingDown, BarChart3, Zap, Target } from 'lucide-react';
 import { MetricCard } from '../components/MetricCard';
 import { mockFactors, getFactorValues, getFactorHeatmap } from '../data/mock';
+import type { Factor } from '../types';
 
 function FactorChart({ factorId, factorName }: { factorId: string; factorName: string }) {
   const data = getFactorValues(factorId, 30);
@@ -97,16 +98,16 @@ function FactorHeatmap() {
           <thead>
             <tr>
               <th className="px-2 py-2 text-left text-xs text-text-secondary">股票</th>
-              {factors.map((f) => (
+              {factors.map((f: string) => (
                 <th key={f} className="px-2 py-2 text-center text-xs text-text-secondary">{f.slice(0, 4)}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {stocks.map((stock, i) => (
+            {stocks.map((stock: string, i: number) => (
               <tr key={stock}>
                 <td className="px-2 py-2 text-sm text-text-primary font-medium">{stock}</td>
-                {values[i]?.map((value, j) => (
+                {values[i]?.map((value: number, j: number) => (
                   <td key={j} className="px-2 py-2">
                     <div className={`w-full h-6 rounded ${getColor(value)} opacity-60`} />
                   </td>
@@ -133,7 +134,7 @@ export function Factors() {
   
   const filteredFactors = selectedCategory === 'all' 
     ? mockFactors 
-    : mockFactors.filter(f => f.category === selectedCategory);
+    : mockFactors.filter((f: Factor) => f.category === selectedCategory);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -154,17 +155,17 @@ export function Factors() {
         />
         <MetricCard
           title="技术因子"
-          value={mockFactors.filter(f => f.category === 'technical').length}
+          value={mockFactors.filter((f: Factor) => f.category === 'technical').length}
           icon={<BarChart3 className="w-5 h-5 text-accent-blue" />}
         />
         <MetricCard
           title="基本面因子"
-          value={mockFactors.filter(f => f.category === 'fundamental').length}
+          value={mockFactors.filter((f: Factor) => f.category === 'fundamental').length}
           icon={<Target className="w-5 h-5 text-accent-purple" />}
         />
         <MetricCard
           title="风险因子"
-          value={mockFactors.filter(f => f.category === 'risk').length}
+          value={mockFactors.filter((f: Factor) => f.category === 'risk').length}
           icon={<Zap className="w-5 h-5 text-warning" />}
         />
       </div>
@@ -195,7 +196,7 @@ export function Factors() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-text-primary">因子走势</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredFactors.map((factor) => (
+            {filteredFactors.map((factor: Factor) => (
               <FactorChart 
                 key={factor.id} 
                 factorId={factor.id} 
@@ -218,7 +219,7 @@ export function Factors() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredFactors.map((factor) => (
+                {filteredFactors.map((factor: Factor) => (
                   <tr key={factor.id} className="hover:bg-bg-hover transition-colors">
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-text-primary">{factor.name}</span>

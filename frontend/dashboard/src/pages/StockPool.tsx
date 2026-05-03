@@ -103,7 +103,7 @@ export function StockPool() {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set(['000001', '600519']));
 
-  const filteredStocks = mockStocks.filter((stock) => {
+  const filteredStocks = mockStocks.filter((stock: Stock) => {
     const matchesSearch = 
       stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       stock.symbol.includes(searchQuery);
@@ -126,10 +126,10 @@ export function StockPool() {
     });
   };
 
-  const avgChange = filteredStocks.reduce((sum, s) => sum + s.changePercent, 0) / filteredStocks.length;
-  const upCount = filteredStocks.filter(s => s.change >= 0).length;
-  const downCount = filteredStocks.filter(s => s.change < 0).length;
-  const totalVolume = filteredStocks.reduce((sum, s) => sum + s.volume, 0);
+  const avgChange = filteredStocks.reduce((sum: number, s: Stock) => sum + s.changePercent, 0) / filteredStocks.length;
+  const upCount = filteredStocks.filter((s: Stock) => s.change >= 0).length;
+  const downCount = filteredStocks.filter((s: Stock) => s.change < 0).length;
+  const totalVolume = filteredStocks.reduce((sum: number, s: Stock) => sum + s.volume, 0);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -264,7 +264,7 @@ export function StockPool() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filteredStocks.map((stock) => (
+            {filteredStocks.map((stock: Stock) => (
               <tr 
                 key={stock.symbol} 
                 className="hover:bg-bg-hover transition-colors cursor-pointer"

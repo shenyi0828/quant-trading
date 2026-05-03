@@ -2,6 +2,7 @@ import { Activity, BarChart3, Package, TrendingUp, TrendingDown } from 'lucide-r
 import { MetricCard } from '../components/MetricCard';
 import { StrategyTable } from '../components/StrategyTable';
 import { getAllStrategies, getDashboardMetrics } from '../data/mock';
+import type { Strategy } from '../types';
 
 export function Dashboard() {
   const strategies = getAllStrategies();
@@ -86,13 +87,13 @@ export function Dashboard() {
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="text-sm text-text-secondary">Winning Strategies</span>
                 <span className="text-sm font-medium text-profit">
-                  {strategies.filter(s => s.totalPnL > 0).length} / {strategies.length}
+                  {strategies.filter((s: Strategy) => s.totalPnL > 0).length} / {strategies.length}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span className="text-sm text-text-secondary">Avg Win Rate</span>
                 <span className="text-sm font-medium text-text-primary">
-                  {(strategies.reduce((sum, s) => sum + s.winRate, 0) / strategies.length).toFixed(1)}%
+                  {(strategies.reduce((sum: number, s: Strategy) => sum + s.winRate, 0) / strategies.length).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -107,7 +108,7 @@ export function Dashboard() {
                   <span className="text-sm text-text-secondary">Running</span>
                 </div>
                 <span className="text-sm font-medium text-profit">
-                  {strategies.filter(s => s.status === 'running').length}
+                  {strategies.filter((s: Strategy) => s.status === 'running').length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -116,7 +117,7 @@ export function Dashboard() {
                   <span className="text-sm text-text-secondary">Stopped</span>
                 </div>
                 <span className="text-sm font-medium text-text-muted">
-                  {strategies.filter(s => s.status === 'stopped').length}
+                  {strategies.filter((s: Strategy) => s.status === 'stopped').length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -125,7 +126,7 @@ export function Dashboard() {
                   <span className="text-sm text-text-secondary">Error</span>
                 </div>
                 <span className="text-sm font-medium text-loss">
-                  {strategies.filter(s => s.status === 'error').length}
+                  {strategies.filter((s: Strategy) => s.status === 'error').length}
                 </span>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Play, RotateCcw, TrendingUp, TrendingDown, Calendar, DollarSign, Percent, Target, Activity } from 'lucide-react';
 import { MetricCard } from '../components/MetricCard';
 import { mockBacktestConfigs, getBacktestResult, getBacktestTrades } from '../data/mock';
-import type { BacktestResult, BacktestTrade } from '../types';
+import type { BacktestResult, BacktestTrade, BacktestConfig, EquityPoint } from '../types';
 
 function BacktestConfigForm({ onRun }: { onRun: (configId: string) => void }) {
   const [selectedConfig, setSelectedConfig] = useState<string>('');
@@ -19,7 +19,7 @@ function BacktestConfigForm({ onRun }: { onRun: (configId: string) => void }) {
             onChange={(e) => setSelectedConfig(e.target.value)}
           >
             <option value="">请选择策略</option>
-            {mockBacktestConfigs.map((config) => (
+            {mockBacktestConfigs.map((config: BacktestConfig) => (
               <option key={config.id} value={config.id}>
                 {config.strategyName}
               </option>
@@ -140,7 +140,7 @@ function BacktestChart({ result }: { result: BacktestResult }) {
     }).format(value);
   };
 
-  const chartData = result.equityCurve.map((point, i) => ({
+  const chartData = result.equityCurve.map((point: EquityPoint, i: number) => ({
     date: point.date,
     equity: point.equity,
     benchmark: result.benchmarkCurve[i]?.equity ?? point.equity,
