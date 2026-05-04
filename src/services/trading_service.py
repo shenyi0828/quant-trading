@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Callable, Any
+from typing import Dict, List, Optional, Callable, Any, Type
 from uuid import uuid4
 
 from execution import OrderManager, SimGateway, Order, Trade, Position, Direction, OrderStatus
@@ -8,6 +8,9 @@ from execution.models import OrderRequest
 from execution.types import Exchange, OrderType, TimeInForce, Offset
 from risk_manager import RiskChecker, RiskContext, RiskResult, RiskAction
 from strategy_engine.types import Order as StrategyOrder
+from algo_trading import AlgoEngine, AlgoStatus, AlgoResult, AlgoStatistics, AlgoParams, BaseAlgo
+from algo_trading.templates import TWAPAlgo, VWAPAlgo, IcebergAlgo
+from algo_trading.types import TWAPParams, VWAPParams, IcebergParams
 
 
 @dataclass
@@ -64,6 +67,9 @@ class TradingService:
         
         self._order_manager.register_order_callback(self._on_order_status)
         self._order_manager.register_trade_callback(self._on_trade)
+        
+        self._algo_engine: Optional[AlgoEngine] = None
+        self._algo_callbacks: List[Callable[[str, AlgoResult, AlgoStatistics], None]] = []
     
     def register_order_callback(self, callback: Callable[[Order], None]):
         self._order_callbacks.append(callback)
@@ -172,6 +178,71 @@ class TradingService:
     def update_market_price(self, symbol: str, price: float):
         self._current_prices[symbol] = price
         self._gateway.set_market_price(symbol, price)
+    
+    @property
+    def algo_engine(self) -> AlgoEngine:
+        if self._algo_engine is None:
+            self._algo_engine = AlgoEngine(self._order_manager)
+        return self._algo_engine
+    
+    def submit_algo_order(
+        self,
+        algo_type: str,
+        params: AlgoParams,
+        on_complete: Optional[Callable[[AlgoResult, AlgoStatistics], None]] = None,
+    ) -> Optional[str]:
+        algo_class = self._get_algo_class(algo_type)
+        if algo_class is None:
+            return None
+        
+        if on_complete is None:
+            on_complete = self._default_algo_complete_callback
+        
+        algo_id = self.algo_engine.register_algo(algo_class, params, on_complete)
+        
+        self.algo_engine.start_algo(algo_id)
+        
+        return algo_id
+    
+    def _get_algo_class(self, algo_type: str) -> Optional[Type[BaseAlgo]]:
+        algo_map = {
+            "twap": TWAPAlgo,
+            "vwap": VWAPAlgo,
+            "iceberg": IcebergAlgo,
+        }
+        return algo_map.get(algo_type.lower())
+    
+    def register_algo_complete_callback(
+        self,
+        callback: Callable[[AlgoResult, AlgoStatistics], None]
+    ):
+        self._algo_callbacks.append(callback)
+    
+    def _default_algo_complete_callback(
+        self,
+        result: AlgoResult,
+        statistics: AlgoStatistics
+    ):
+        for callback in self._algo_callbacks:
+            callback(result, statistics)
+    
+    def get_algo_status(self, algo_id: str) -> Optional[AlgoStatus]:
+        return self.algo_engine.get_algo_status(algo_id)
+    
+    def get_algo_statistics(self, algo_id: str) -> Optional[AlgoStatistics]:
+        return self.algo_engine.get_algo_statistics(algo_id)
+    
+    def stop_algo(self, algo_id: str) -> bool:
+        return self.algo_engine.stop_algo(algo_id)
+    
+    def pause_algo(self, algo_id: str) -> bool:
+        return self.algo_engine.pause_algo(algo_id)
+    
+    def resume_algo(self, algo_id: str) -> bool:
+        return self.algo_engine.resume_algo(algo_id)
+    
+    def get_all_algos(self) -> List[Any]:
+        return self.algo_engine.get_all_algos()
     
     def _on_order_status(self, order: Order):
         for callback in self._order_callbacks:
