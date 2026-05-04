@@ -132,3 +132,90 @@ export interface StrategySignal {
   strength: number;
   timestamp: string;
 }
+
+export interface SpreadPair {
+  id: string;
+  name: string;
+  symbolA: string;
+  nameA: string;
+  symbolB: string;
+  nameB: string;
+  currentSpread: number;
+  spreadChange: number;
+  spreadChangePercent: number;
+  zScore: number;
+  status: 'normal' | 'oversold' | 'overbought' | 'extreme';
+  correlation: number;
+  halfLife: number;
+  lastUpdated: string;
+}
+
+export interface SpreadPoint {
+  timestamp: number;
+  date: string;
+  spread: number;
+  priceA: number;
+  priceB: number;
+  zScore: number;
+}
+
+export interface SpreadSignal {
+  pairId: string;
+  pairName: string;
+  signal: 'long_spread' | 'short_spread' | 'close' | 'hold';
+  strength: number;
+  timestamp: string;
+  reason: string;
+}
+
+export interface DrawdownPoint {
+  date: string;
+  timestamp: number;
+  equity: number;
+  drawdown: number;
+  drawdownPercent: number;
+}
+
+export interface RollingMetric {
+  date: string;
+  timestamp: number;
+  window: number;
+  sharpeRatio: number;
+  volatility: number;
+  maxDrawdown: number;
+  winRate: number;
+}
+
+export interface MonteCarloResult {
+  simulationCount: number;
+  finalEquity: { mean: number; min: number; max: number; p95: number; p5: number };
+  maxDrawdown: { mean: number; min: number; max: number; p95: number; p5: number };
+  probabilityOfProfit: number;
+  probabilityOfRuin: number;
+  confidenceIntervals: { level: number; min: number; max: number }[];
+}
+
+export interface EfficientFrontierPoint {
+  return: number;
+  risk: number;
+  sharpeRatio: number;
+  weights: Record<string, number>;
+}
+
+export interface PortfolioAsset {
+  symbol: string;
+  name: string;
+  expectedReturn: number;
+  volatility: number;
+  weight: number;
+  currentPrice: number;
+}
+
+export interface OptimizationResult {
+  strategy: 'max_sharpe' | 'min_volatility' | 'max_return' | 'equal_weight';
+  expectedReturn: number;
+  expectedRisk: number;
+  sharpeRatio: number;
+  weights: PortfolioAsset[];
+  rebalancingCost: number;
+}
