@@ -6,6 +6,9 @@ import { Factors } from './pages/Factors';
 import { Backtest } from './pages/Backtest';
 import { StockPool } from './pages/StockPool';
 import { StrategyDetail } from './pages/StrategyDetail';
+import { SpreadTrading } from './pages/SpreadTrading';
+import { Analytics } from './pages/Analytics';
+import { PortfolioOptimization } from './pages/PortfolioOptimization';
 
 function App() {
   return (
@@ -17,6 +20,9 @@ function App() {
           <Route path="/factors" element={<Factors />} />
           <Route path="/backtest" element={<Backtest />} />
           <Route path="/pool" element={<StockPool />} />
+          <Route path="/spread" element={<SpreadTrading />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/portfolio-opt" element={<PortfolioOptimization />} />
           <Route path="/strategy/:id" element={<StrategyDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

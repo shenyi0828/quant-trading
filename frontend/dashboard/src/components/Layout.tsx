@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, BarChart3, LayoutDashboard, Settings, TrendingUp, PieChart, Layers } from 'lucide-react';
+import { Activity, BarChart3, LayoutDashboard, Settings, TrendingUp, PieChart, Layers, GitCompare, LineChart, SlidersHorizontal } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,6 +15,9 @@ export function Layout({ children }: LayoutProps) {
     { path: '/factors', label: '因子分析', icon: TrendingUp },
     { path: '/backtest', label: '回测分析', icon: PieChart },
     { path: '/pool', label: '股票池', icon: Layers },
+    { path: '/spread', label: '价差交易', icon: GitCompare },
+    { path: '/analytics', label: '高级分析', icon: LineChart },
+    { path: '/portfolio-opt', label: '组合优化', icon: SlidersHorizontal },
     { path: '/settings', label: '设置', icon: Settings },
   ];
 

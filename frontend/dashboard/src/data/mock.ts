@@ -11,7 +11,16 @@ import type {
   StrategySignal,
   EquityPoint,
   Holding,
-  Trade
+  Trade,
+  SpreadPair,
+  SpreadPoint,
+  SpreadSignal,
+  DrawdownPoint,
+  RollingMetric,
+  MonteCarloResult,
+  EfficientFrontierPoint,
+  PortfolioAsset,
+  OptimizationResult
 } from '../types';
 
 // ========== Strategy Mock Data ==========
@@ -264,8 +273,6 @@ export const mockStocks: Stock[] = [
   { symbol: '601012', name: '隆基绿能', industry: '电力设备', marketCap: 2.8e11, price: 38.50, change: 2.30, changePercent: 6.15, volume: 42000000, pe: 18.5, pb: 3.2 },
 ];
 
-// ========== Helper Functions ==========
-
 function generateEquityCurve(totalPnL: number, days: number): EquityPoint[] {
   const curve: EquityPoint[] = [];
   const baseEquity = 500000;
@@ -286,4 +293,242 @@ function generateEquityCurve(totalPnL: number, days: number): EquityPoint[] {
     });
   }
   return curve;
+}
+
+function generateSpreadHistory(pairId: string, days: number): SpreadPoint[] {
+  const points: SpreadPoint[] = [];
+  const basePriceA = pairId === 'spread-001' ? 1800 : (pairId === 'spread-002' ? 48 : 35);
+  const basePriceB = pairId === 'spread-001' ? 165 : (pairId === 'spread-002' ? 12.5 : 18);
+  const baseSpread = basePriceA - basePriceB * (pairId === 'spread-001' ? 10 : 1);
+  
+  for (let i = days; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const noise = Math.sin(i * 0.1) * 50 + (Math.random() - 0.5) * 30;
+    const spread = baseSpread + noise;
+    const priceA = basePriceA + (Math.random() - 0.5) * 20;
+    const priceB = basePriceB + (Math.random() - 0.5) * 2;
+    const zScore = (spread - baseSpread) / 50;
+    
+    points.push({
+      timestamp: date.getTime(),
+      date: date.toISOString().split('T')[0],
+      spread: Number(spread.toFixed(2)),
+      priceA: Number(priceA.toFixed(2)),
+      priceB: Number(priceB.toFixed(2)),
+      zScore: Number(zScore.toFixed(2))
+    });
+  }
+  return points;
+}
+
+function generateDrawdownData(days: number): DrawdownPoint[] {
+  const points: DrawdownPoint[] = [];
+  const baseEquity = 1000000;
+  let peak = baseEquity;
+  
+  for (let i = days; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const trend = (days - i) * 200;
+    const noise = Math.sin(i * 0.05) * 30000 + (Math.random() - 0.5) * 15000;
+    const equity = baseEquity + trend + noise;
+    peak = Math.max(peak, equity);
+    const drawdown = peak - equity;
+    const drawdownPercent = (drawdown / peak) * 100;
+    
+    points.push({
+      date: date.toISOString().split('T')[0],
+      timestamp: date.getTime(),
+      equity: Number(equity.toFixed(2)),
+      drawdown: Number(drawdown.toFixed(2)),
+      drawdownPercent: Number(drawdownPercent.toFixed(2))
+    });
+  }
+  return points;
+}
+
+export const mockSpreadPairs: SpreadPair[] = [
+  {
+    id: 'spread-001',
+    name: '白酒龙头价差',
+    symbolA: '600519',
+    nameA: '贵州茅台',
+    symbolB: '000858',
+    nameB: '五粮液',
+    currentSpread: 150.5,
+    spreadChange: -2.3,
+    spreadChangePercent: -1.5,
+    zScore: -1.8,
+    status: 'oversold',
+    correlation: 0.85,
+    halfLife: 12,
+    lastUpdated: '2025-05-04 10:30:00'
+  },
+  {
+    id: 'spread-002',
+    name: '银行同业价差',
+    symbolA: '601318',
+    nameA: '中国平安',
+    symbolB: '000001',
+    nameB: '平安银行',
+    currentSpread: 35.7,
+    spreadChange: 0.8,
+    spreadChangePercent: 2.3,
+    zScore: 2.1,
+    status: 'overbought',
+    correlation: 0.72,
+    halfLife: 8,
+    lastUpdated: '2025-05-04 10:28:00'
+  },
+  {
+    id: 'spread-003',
+    name: '新能源产业链',
+    symbolA: '300750',
+    nameA: '宁德时代',
+    symbolB: '601012',
+    nameB: '隆基绿能',
+    currentSpread: 176.5,
+    spreadChange: -5.2,
+    spreadChangePercent: -2.8,
+    zScore: -0.5,
+    status: 'normal',
+    correlation: 0.68,
+    halfLife: 15,
+    lastUpdated: '2025-05-04 10:25:00'
+  },
+  {
+    id: 'spread-004',
+    name: '食品饮料组合',
+    symbolA: '600887',
+    nameA: '伊利股份',
+    symbolB: '002352',
+    nameB: '顺丰控股',
+    currentSpread: -13.3,
+    spreadChange: 1.5,
+    spreadChangePercent: -10.1,
+    zScore: 2.8,
+    status: 'extreme',
+    correlation: 0.45,
+    halfLife: 20,
+    lastUpdated: '2025-05-04 10:20:00'
+  }
+];
+
+export function getSpreadHistory(pairId: string): SpreadPoint[] {
+  return generateSpreadHistory(pairId, 30);
+}
+
+export function getSpreadSignals(): SpreadSignal[] {
+  return [
+    { pairId: 'spread-001', pairName: '白酒龙头价差', signal: 'long_spread', strength: 0.82, timestamp: '2025-05-04 10:30:00', reason: 'Z-Score触及-2阈值，价差低估' },
+    { pairId: 'spread-002', pairName: '银行同业价差', signal: 'short_spread', strength: 0.75, timestamp: '2025-05-04 10:28:00', reason: 'Z-Score突破+2，价差高估' },
+    { pairId: 'spread-003', pairName: '新能源产业链', signal: 'hold', strength: 0.35, timestamp: '2025-05-04 10:25:00', reason: '价差处于均值附近，观望' },
+    { pairId: 'spread-004', pairName: '食品饮料组合', signal: 'close', strength: 0.90, timestamp: '2025-05-04 10:20:00', reason: '极端偏离，建议平仓锁定收益' }
+  ];
+}
+
+export function getDrawdownAnalysis(): DrawdownPoint[] {
+  return generateDrawdownData(180);
+}
+
+export function getRollingMetrics(window: number): RollingMetric[] {
+  const metrics: RollingMetric[] = [];
+  const days = 90;
+  
+  for (let i = days; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const baseSharpe = 1.5 + Math.sin(i * 0.1) * 0.3;
+    
+    metrics.push({
+      date: date.toISOString().split('T')[0],
+      timestamp: date.getTime(),
+      window,
+      sharpeRatio: Number((baseSharpe + (Math.random() - 0.5) * 0.2).toFixed(2)),
+      volatility: Number((0.15 + (Math.random() - 0.5) * 0.05).toFixed(3)),
+      maxDrawdown: Number((0.12 + (Math.random() - 0.5) * 0.03).toFixed(3)),
+      winRate: Number((65 + (Math.random() - 0.5) * 10).toFixed(1))
+    });
+  }
+  return metrics;
+}
+
+export function getMonteCarloResult(): MonteCarloResult {
+  return {
+    simulationCount: 10000,
+    finalEquity: { mean: 1250000, min: 850000, max: 1850000, p95: 1650000, p5: 920000 },
+    maxDrawdown: { mean: 0.12, min: 0.05, max: 0.28, p95: 0.18, p5: 0.07 },
+    probabilityOfProfit: 0.78,
+    probabilityOfRuin: 0.02,
+    confidenceIntervals: [
+      { level: 95, min: 920000, max: 1650000 },
+      { level: 90, min: 980000, max: 1580000 },
+      { level: 80, min: 1050000, max: 1480000 },
+      { level: 50, min: 1150000, max: 1350000 }
+    ]
+  };
+}
+
+export function getEfficientFrontier(): EfficientFrontierPoint[] {
+  const points: EfficientFrontierPoint[] = [];
+  const assets = ['600519', '000858', '601318', '600036', '300750'];
+  
+  for (let i = 0; i <= 20; i++) {
+    const risk = 0.05 + (i / 20) * 0.25;
+    const returnRate = 0.08 + risk * 0.4 + Math.sin(i * 0.3) * 0.02;
+    const sharpe = (returnRate - 0.03) / risk;
+    const weights: Record<string, number> = {};
+    
+    assets.forEach((asset, idx) => {
+      weights[asset] = Number((0.1 + Math.sin((i + idx) * 0.5) * 0.1).toFixed(3));
+    });
+    const sum = Object.values(weights).reduce((a, b) => a + b, 0);
+    Object.keys(weights).forEach(key => { weights[key] = Number((weights[key] / sum).toFixed(3)); });
+    
+    points.push({
+      return: Number(returnRate.toFixed(3)),
+      risk: Number(risk.toFixed(3)),
+      sharpeRatio: Number(sharpe.toFixed(2)),
+      weights
+    });
+  }
+  return points;
+}
+
+export const mockPortfolioAssets: PortfolioAsset[] = [
+  { symbol: '600519', name: '贵州茅台', expectedReturn: 0.12, volatility: 0.22, weight: 0.25, currentPrice: 1920.50 },
+  { symbol: '000858', name: '五粮液', expectedReturn: 0.10, volatility: 0.25, weight: 0.15, currentPrice: 172.30 },
+  { symbol: '601318', name: '中国平安', expectedReturn: 0.08, volatility: 0.18, weight: 0.20, currentPrice: 48.20 },
+  { symbol: '600036', name: '招商银行', expectedReturn: 0.09, volatility: 0.16, weight: 0.20, currentPrice: 35.80 },
+  { symbol: '300750', name: '宁德时代', expectedReturn: 0.15, volatility: 0.30, weight: 0.20, currentPrice: 215.00 }
+];
+
+export function getOptimizationResult(strategy: 'max_sharpe' | 'min_volatility' | 'max_return' | 'equal_weight'): OptimizationResult {
+  const weights: PortfolioAsset[] = mockPortfolioAssets.map(asset => {
+    let weight = 0.20;
+    if (strategy === 'max_sharpe') {
+      weight = asset.symbol === '600519' ? 0.35 : (asset.symbol === '300750' ? 0.25 : 0.10);
+    } else if (strategy === 'min_volatility') {
+      weight = asset.symbol === '600036' ? 0.40 : (asset.symbol === '601318' ? 0.30 : 0.075);
+    } else if (strategy === 'max_return') {
+      weight = asset.symbol === '300750' ? 0.50 : (asset.symbol === '600519' ? 0.30 : 0.05);
+    } else {
+      weight = 0.20;
+    }
+    return { ...asset, weight };
+  });
+  
+  const expectedReturn = strategy === 'max_return' ? 0.135 : (strategy === 'min_volatility' ? 0.085 : 0.115);
+  const expectedRisk = strategy === 'min_volatility' ? 0.12 : (strategy === 'max_return' ? 0.22 : 0.16);
+  const sharpe = (expectedReturn - 0.03) / expectedRisk;
+  
+  return {
+    strategy,
+    expectedReturn: Number(expectedReturn.toFixed(3)),
+    expectedRisk: Number(expectedRisk.toFixed(3)),
+    sharpeRatio: Number(sharpe.toFixed(2)),
+    weights,
+    rebalancingCost: 0.0015
+  };
 }
