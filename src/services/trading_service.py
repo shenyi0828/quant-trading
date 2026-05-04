@@ -171,8 +171,7 @@ class TradingService:
             if pos.current_price > 0
         )
         self._account_info.unrealized_pnl = total_unrealized
-        self._account_info.total_value = self._account_info.balance + total_unrealized
-        
+
         return self._account_info
     
     def update_market_price(self, symbol: str, price: float):
