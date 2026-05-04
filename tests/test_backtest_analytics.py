@@ -17,7 +17,6 @@ class TestDrawdownAnalyzer:
         dd = DrawdownAnalyzer()
         for v in [100, 110, 100, 90, 95, 90, 80, 85, 100, 110]:
             dd.update(v)
-        # Peak 110 -> trough 80 -> dd = (110-80)/110 = 0.2727
         assert dd.max_drawdown == pytest.approx(30 / 110, abs=0.01)
 
     def test_avg_drawdown(self):
@@ -28,30 +27,26 @@ class TestDrawdownAnalyzer:
 
     def test_max_drawdown_duration(self):
         dd = DrawdownAnalyzer()
-        # Create a long drawdown period
         for v in [100, 99, 98, 97, 96, 95, 96, 97, 98, 100]:
             dd.update(v)
         assert dd.max_drawdown_duration > 0
 
     def test_drawdown_series(self):
         dd = DrawdownAnalyzer()
-        values = [100, 110, 90, 95, 80, 120]
-        series = dd.get_drawdown_series(values)
-        assert len(series) == len(values)
-        assert series[0] == 0.0  # First value is peak
+        series = dd.get_drawdown_series([100, 110, 90, 95, 80, 120])
+        assert len(series) == 6
+        assert series[0] == 0.0
+        # Running peak at index 4 is 110 (not 120 yet), so dd = (110-80)/110
         assert series[4] == pytest.approx((110 - 80) / 110, abs=0.01)
-        # Let me re-check: peak progresses: 100, 110, 110, 110, 110, 120
-        # peak at i=4 is still 110, v=80
 
     def test_all_drawdowns_tracking(self):
         dd = DrawdownAnalyzer()
-        # Create drawdown that gets finalized by new peak
-        for v in [100, 90, 80, 105]:
+        # 100 -> 90 (dd) -> 105 (new peak, stores the dd)
+        for v in [100, 90, 105]:
             dd.update(v)
         all_dd = dd.get_all_drawdowns()
-        # When 105 breaks the 100 peak, the previous dd should be added
-        assert len(all_dd) >= 0  # _drawdowns only gets populated when new peak breaks
-        assert all_dd[0]["max_dd"] > 0
+        assert len(all_dd) >= 1
+        assert all_dd[0]["max_dd"] == pytest.approx(0.1, abs=0.01)
 
     def test_single_value(self):
         dd = DrawdownAnalyzer()
@@ -196,17 +191,13 @@ class TestBacktestReport:
             end_date=date(2025, 12, 31),
             initial_capital=100000.0,
         )
-        # Simulate 30 days of data
         values = [100000.0]
         for i in range(1, 31):
             values.append(values[-1] * (1 + random.gauss(0.001, 0.015)))
             report.add_daily_value(values[-1])
-
-        # Add some trades
         for _ in range(10):
             pnl = random.uniform(-500, 800)
             report.add_trade_pnl(pnl)
-
         result = report.finalize()
         assert result["summary"]["strategy_name"] == "TestStrategy"
         assert result["summary"]["initial_capital"] == 100000.0
@@ -214,17 +205,11 @@ class TestBacktestReport:
         assert result["trades"]["total_trades"] == 10
 
     def test_to_json(self):
-        from datetime import date
-        report = BacktestReport(
-            strategy_name="JsonTest",
-            initial_capital=100000.0,
-        )
-        values = [100000.0, 101000.0, 99000.0, 102000.0]
-        for v in values:
+        report = BacktestReport(strategy_name="JsonTest", initial_capital=100000.0)
+        for v in [100000.0, 101000.0, 99000.0, 102000.0]:
             report.add_daily_value(v)
         report.add_trade_pnl(1000.0)
         report.add_trade_pnl(-1000.0)
-
         json_str = report.to_json()
         parsed = json.loads(json_str)
         assert parsed["summary"]["strategy_name"] == "JsonTest"
@@ -237,9 +222,8 @@ class TestBacktestReport:
 
     def test_daily_returns_provided(self):
         report = BacktestReport(initial_capital=100000.0)
-        report.add_daily_value(100000.0)
-        report.add_daily_value(101000.0)
-        report.add_daily_value(99000.0)
+        for v in [100000.0, 101000.0, 99000.0]:
+            report.add_daily_value(v)
         result = report.finalize(daily_returns=[0.01, -0.0198])
         assert result["summary"]["final_value"] == 99000.0
 
@@ -252,7 +236,6 @@ class TestBacktestReport:
             report.add_daily_value(values[-1])
         report.add_trade_pnl(500.0)
         result = report.finalize()
-
         assert result["performance"]["sharpe_ratio"] is not None
         assert result["performance"]["calmar_ratio"] is not None
         assert result["performance"]["sortino_ratio"] is not None
